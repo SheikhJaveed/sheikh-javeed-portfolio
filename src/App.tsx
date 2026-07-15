@@ -172,10 +172,6 @@ function Hero() {
         </div>
 
         <div className="self-center">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="h-4 w-4 rounded-full border border-foreground bg-[linear-gradient(90deg,#f7f4ea_50%,#0b0b0c_50%)]" />
-            <Badge className="text-[11px] font-bold tracking-[0.18em]">available</Badge>
-          </div>
           <h1 className="font-serif text-4xl leading-none tracking-[-0.055em] md:text-5xl">
             {profile.name}
           </h1>

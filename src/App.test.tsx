@@ -10,6 +10,7 @@ describe("Portfolio app", () => {
     expect(screen.getAllByText(/AI Engineer/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/agentic systems/i)).toBeInTheDocument();
     expect(screen.getByText(/BaseThesis Labs/i)).toBeInTheDocument();
+    expect(screen.queryByText(/available/i)).not.toBeInTheDocument();
     expect(screen.getByRole("img", { name: /profile illustration/i })).toHaveAttribute(
       "src",
       "/profile-avatar.jpeg",
