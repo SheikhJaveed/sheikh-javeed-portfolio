@@ -7,7 +7,6 @@ import {
   Linkedin,
   Mail,
   MoonStar,
-  Paperclip,
   Sun,
   Twitter,
 } from "lucide-react";
@@ -16,10 +15,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { aiSystems, contactLinks, experience, profile, projects, signals } from "@/lib/portfolio";
 
 const navLinks = [
-  { label: "Home", href: "#home" },
-  { label: "Projects", href: "#work" },
-  { label: "More", href: "#experience" },
-];
+  { label: "Home", href: "#home", sectionId: "home" },
+  { label: "Projects", href: "#work", sectionId: "work" },
+  { label: "More", href: "#experience", sectionId: "experience" },
+] as const;
+
+type NavSectionId = (typeof navLinks)[number]["sectionId"];
 
 const contactIconMap = {
   Email: Mail,
@@ -35,17 +36,52 @@ function App() {
 
     return window.localStorage.getItem("portfolio-theme") === "light" ? "light" : "dark";
   });
+  const [activeSection, setActiveSection] = useState<NavSectionId>(() => {
+    if (typeof window === "undefined") {
+      return "home";
+    }
+
+    return navLinks.find((link) => link.href === window.location.hash)?.sectionId ?? "home";
+  });
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("portfolio-theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    const updateActiveSection = () => {
+      const currentSection = navLinks.reduce<NavSectionId>((current, link) => {
+        const section = document.getElementById(link.sectionId);
+        if (!section) {
+          return current;
+        }
+
+        return section.getBoundingClientRect().top <= 140 ? link.sectionId : current;
+      }, "home");
+
+      setActiveSection(currentSection);
+    };
+
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="page-grid" />
       <main className="mx-auto min-h-screen max-w-[880px] border-x border-dashed border-border/80">
-        <Header theme={theme} onToggleTheme={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
+        <Header
+          activeSection={activeSection}
+          theme={theme}
+          onSelectSection={setActiveSection}
+          onToggleTheme={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+        />
         <Hero />
         <SystemTrace />
         <About />
@@ -61,10 +97,14 @@ function App() {
 }
 
 function Header({
+  activeSection,
   theme,
+  onSelectSection,
   onToggleTheme,
 }: {
+  activeSection: NavSectionId;
   theme: "dark" | "light";
+  onSelectSection: (section: NavSectionId) => void;
   onToggleTheme: () => void;
 }) {
   const isDark = theme === "dark";
@@ -73,22 +113,31 @@ function Header({
   return (
     <header className="sticky top-0 z-40 border-b border-dashed border-border/80 bg-background/88 px-5 py-3 backdrop-blur-xl md:px-7">
       <div className="flex items-center justify-between">
-        <a href="#home" className="font-serif text-3xl leading-none tracking-[-0.06em] text-foreground">
+        <a
+          href="#home"
+          onClick={() => onSelectSection("home")}
+          className="font-serif text-3xl leading-none tracking-[-0.06em] text-foreground"
+        >
           Javeed
         </a>
 
         <nav aria-label="Portfolio sections" className="flex items-center gap-1 text-xs font-semibold text-muted-foreground sm:text-sm">
-          {navLinks.map((link, index) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className={`relative rounded-sm px-3 py-2 transition-colors hover:text-foreground ${
-                index === 0 ? "text-foreground after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-foreground" : ""
-              }`}
-            >
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = activeSection === link.sectionId;
+            return (
+              <a
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? "page" : undefined}
+                onClick={() => onSelectSection(link.sectionId)}
+                className={`relative rounded-sm px-3 py-2 transition-colors hover:text-foreground ${
+                  isActive ? "text-foreground after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-foreground" : ""
+                }`}
+              >
+                {link.label}
+              </a>
+            );
+          })}
           <ChevronDown className="h-4 w-4" />
           <button
             className="ml-3 grid h-9 w-9 place-items-center rounded-sm text-foreground transition-colors hover:bg-secondary"
@@ -123,12 +172,8 @@ function Hero() {
         transition={{ duration: 0.45, ease: "easeOut" }}
         className="grid gap-8 border-y border-dashed border-border/80 px-5 py-8 md:grid-cols-[178px_minmax(0,1fr)] md:px-7"
       >
-        <div className="pixel-avatar" aria-label="Abstract pixel profile portrait">
-          <div className="avatar-hair" />
-          <div className="avatar-face" />
-          <div className="avatar-body" />
-          <div className="avatar-eye left" />
-          <div className="avatar-eye right" />
+        <div className="pixel-avatar">
+          <img src="/profile-avatar.jpeg" alt="Sheikh Mannan Javeed profile illustration" />
         </div>
 
         <div className="self-center">
@@ -151,31 +196,32 @@ function Hero() {
 
 function SystemTrace() {
   const traceLines = [
-    ["boot.profile()", "OK", "ready"],
-    ["load.experience()", `${experience.length} entries`, "indexed"],
-    ["scan.projects()", `${projects.length} modules`, "linked"],
+    ["init.ai_engineer()", profile.role, "active"],
+    ["hydrate.memory()", "RAG + agents", "contextual"],
+    ["sync.tool_calls()", `${experience.length} workflows`, "reliable"],
+    ["scan.ai_projects()", `${projects.length} modules`, "linked"],
     ["open.channel()", "mailto ready", "listening"],
   ];
 
   return (
     <section className="border-b border-dashed border-border/80 px-5 py-5 md:px-7" aria-label="System trace">
-      <div className="terminal-panel overflow-hidden rounded-md border border-primary/20 bg-[#050806] font-mono text-[11px] shadow-[0_18px_55px_rgba(0,0,0,0.32),inset_0_0_0_1px_rgba(124,255,190,0.05)] md:text-xs">
-        <div className="flex items-center justify-between border-b border-primary/10 bg-white/[0.025] px-4 py-2">
+      <div className="terminal-panel overflow-hidden rounded-md border border-[#7cffbe]/25 bg-[#050806] font-mono text-[11px] text-[#dbe8df] shadow-[0_18px_55px_rgba(0,0,0,0.32),inset_0_0_0_1px_rgba(124,255,190,0.05)] md:text-xs">
+        <div className="flex items-center justify-between border-b border-[#7cffbe]/10 bg-white/[0.025] px-4 py-2">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b5f]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#ffd166]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#57e389]" />
           </div>
-          <span className="text-[10px] uppercase tracking-[0.24em] text-primary/70">diagnostics</span>
+          <span className="text-[10px] uppercase tracking-[0.24em] text-[#7cffbe]/70">diagnostics</span>
         </div>
 
         <div className="relative px-4 py-4">
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-muted-foreground">
-            <span className="text-primary">javeed@portfolio</span>
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-[#8b9b91]">
+            <span className="text-[#7cffbe]">javeed@portfolio</span>
             <span>:</span>
-            <span className="text-foreground/75">~/system</span>
-            <span className="text-primary">$</span>
-            <span className="text-foreground">run trace --quick</span>
+            <span className="text-[#b9c8bf]">~/ai-runtime</span>
+            <span className="text-[#7cffbe]">$</span>
+            <span className="text-[#f2fff8]">run agent trace --quick</span>
             <span className="terminal-cursor" aria-hidden="true" />
           </div>
 
@@ -183,14 +229,14 @@ function SystemTrace() {
             {traceLines.map(([command, status, note], index) => (
               <div
                 key={command}
-                className="grid grid-cols-[18px_minmax(0,1fr)_auto] items-center gap-3 text-muted-foreground"
+                className="grid grid-cols-[18px_minmax(0,1fr)_auto] items-center gap-3 text-[#8b9b91]"
                 style={{ animationDelay: `${index * 90}ms` }}
               >
-                <span className="text-primary/70">&gt;</span>
-                <span className="min-w-0 truncate text-foreground/85">{command}</span>
+                <span className="text-[#7cffbe]/70">&gt;</span>
+                <span className="min-w-0 truncate text-[#dbe8df]">{command}</span>
                 <span className="flex items-center gap-2 whitespace-nowrap">
-                  <span className="text-primary">{status}</span>
-                  <span className="hidden text-foreground/35 sm:inline">[{note}]</span>
+                  <span className="text-[#7cffbe]">{status}</span>
+                  <span className="hidden text-[#dbe8df]/45 sm:inline">[{note}]</span>
                 </span>
               </div>
             ))}
@@ -209,7 +255,7 @@ function About() {
           I&apos;m an <strong>AI Engineer</strong> building agentic systems, RAG-backed memory, and production backend workflows.
         </li>
         <li>
-          My work spans <strong>tool-calling integrations, semantic search, FastAPI, React, LangChain</strong>, and reliable APIs that connect models to real products.
+          My work spans <strong>Agentic AI, semantic search, FastAPI, React, LangChain</strong>, and reliable APIs that connect models to real products.
         </li>
         <li>
           I&apos;m a Computer Science undergraduate focused on GenAI, distributed systems, AI observability, and cloud-integrated applications.
@@ -220,11 +266,6 @@ function About() {
 }
 
 function ContactTiles() {
-  const resumeLink = {
-    label: "Resume",
-    href: profile.resume,
-    icon: Paperclip,
-  };
   const twitterLink = {
     label: "Twitter",
     href: "https://x.com/sheikh_javeed12",
@@ -236,12 +277,11 @@ function ContactTiles() {
     contactLinks.find((link) => link.label === "LinkedIn"),
     twitterLink,
     contactLinks.find((link) => link.label === "Email"),
-    resumeLink,
   ].filter(Boolean) as Array<{ label: string; href: string; icon?: ElementType }>;
 
   return (
     <Section id="contact" title="Contact" compact roleLabel="Contact">
-      <div className="grid gap-px overflow-hidden border-y border-dashed border-border/80 bg-border/80 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-px overflow-hidden border-y border-dashed border-border/80 bg-border/80 sm:grid-cols-2 lg:grid-cols-4">
         {links.map((link) => {
           const Icon = link.icon ?? contactIconMap[link.label as keyof typeof contactIconMap] ?? Mail;
           return (

@@ -10,6 +10,10 @@ describe("Portfolio app", () => {
     expect(screen.getAllByText(/AI Engineer/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/agentic systems/i)).toBeInTheDocument();
     expect(screen.getByText(/BaseThesis Labs/i)).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /profile illustration/i })).toHaveAttribute(
+      "src",
+      "/profile-avatar.jpeg",
+    );
   });
 
   it("renders the core single-page sections", () => {
@@ -33,9 +37,11 @@ describe("Portfolio app", () => {
   it("renders the custom system trace without signals verification", () => {
     render(<App />);
 
-    expect(screen.getByText("boot.profile()")).toBeInTheDocument();
-    expect(screen.getByText("load.experience()")).toBeInTheDocument();
-    expect(screen.getByText("scan.projects()")).toBeInTheDocument();
+    expect(screen.getByText("run agent trace --quick")).toBeInTheDocument();
+    expect(screen.getByText("init.ai_engineer()")).toBeInTheDocument();
+    expect(screen.getByText("hydrate.memory()")).toBeInTheDocument();
+    expect(screen.getByText("sync.tool_calls()")).toBeInTheDocument();
+    expect(screen.getByText("scan.ai_projects()")).toBeInTheDocument();
     expect(screen.getByText("open.channel()")).toBeInTheDocument();
     expect(screen.queryByText("verify.signals()")).not.toBeInTheDocument();
   });
@@ -53,6 +59,21 @@ describe("Portfolio app", () => {
     expect(screen.getByRole("button", { name: /switch to dark theme/i })).toBeInTheDocument();
   });
 
+  it("moves the active navbar marker when a section link is selected", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const homeLink = screen.getByRole("link", { name: /Home/i });
+    const projectsLink = screen.getByRole("link", { name: /Projects/i });
+
+    expect(homeLink).toHaveAttribute("aria-current", "page");
+
+    await user.click(projectsLink);
+
+    expect(projectsLink).toHaveAttribute("aria-current", "page");
+    expect(homeLink).not.toHaveAttribute("aria-current");
+  });
+
   it("exposes project and contact links", () => {
     render(<App />);
 
@@ -65,5 +86,6 @@ describe("Portfolio app", () => {
       "href",
       "mailto:smjaveed94@gmail.com",
     );
+    expect(screen.queryByRole("link", { name: /Resume/i })).not.toBeInTheDocument();
   });
 });

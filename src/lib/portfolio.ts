@@ -117,7 +117,7 @@ export const signals = [
   },
   {
     label: "Xenith Hackathon",
-    detail: "4th place at DSCE in May 2025, with additional Advaya Hackathon top-six participation.",
+    detail: "Placed 4th at Xenith Hackathon, DSCE in May 2025. Also ranked 6th at Advaya Hackathon, BGSCET.",
     icon: Medal,
   },
   {
