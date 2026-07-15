@@ -158,12 +158,7 @@ function Hero() {
   return (
     <section id="home" className="scroll-mt-24">
       <div className="pixel-panorama mx-3 mt-0 h-[172px] overflow-hidden md:mx-6 md:h-[236px]">
-        <div className="pixel-sun" />
-        <div className="pixel-ridge ridge-one" />
-        <div className="pixel-ridge ridge-two" />
-        <div className="pixel-waterfall fall-one" />
-        <div className="pixel-waterfall fall-two" />
-        <div className="pixel-ground" />
+        <img src="/hero-panorama.jpeg" alt="Cosmic horizon above a planet" />
       </div>
 
       <motion.div

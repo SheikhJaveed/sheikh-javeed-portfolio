@@ -14,6 +14,10 @@ describe("Portfolio app", () => {
       "src",
       "/profile-avatar.jpeg",
     );
+    expect(screen.getByRole("img", { name: /cosmic horizon/i })).toHaveAttribute(
+      "src",
+      "/hero-panorama.jpeg",
+    );
   });
 
   it("renders the core single-page sections", () => {
